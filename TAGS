@@ -1,0 +1,171 @@
+
+./demo/Main.hs,264
+module Main Main1,2
+copyPNGDataToFiles copyPNGDataToFiles12,13
+copyPNGDataToFiles copyPNGDataToFiles13,14
+test test20,21
+test test21,22
+copyPNG copyPNG23,24
+copyPNG copyPNG24,25
+test2 test226,27
+test2 test227,28
+main main29,30
+main main30,31
+
+./src/Codec/Picture/Png/Streaming.hs,1060
+module Codec.Picture.Png.StreamingCodec.Picture.Png.Streaming3,4
+type RawHeader RawHeader43,44
+type RawHeader m m43,44
+type RawMetadata RawMetadata47,48
+type RawData RawData51,52
+type RawPNG RawPNG56,57
+decodePNG decodePNG60,61
+decodePNG decodePNG61,62
+decodePNGComplete decodePNGComplete75,76
+decodePNGComplete decodePNGComplete76,77
+encodePNG encodePNG79,80
+encodePNG encodePNG80,81
+pngSignature pngSignature92,93
+pngSignature pngSignature93,94
+checkSig checkSig99,100
+checkSig checkSig100,101
+decodeHeader decodeHeader108,109
+decodeHeader decodeHeader109,110
+decodeMetadata decodeMetadata117,118
+decodeMetadata decodeMetadata118,119
+decodeData decodeData129,130
+decodeData decodeData130,131
+writeSig writeSig141,142
+writeSig writeSig142,143
+encodeHeader encodeHeader144,145
+encodeHeader encodeHeader145,146
+encodeMetadata encodeMetadata150,151
+encodeMetadata encodeMetadata151,152
+encodeData encodeData154,155
+encodeData encodeData155,156
+writeIEND writeIEND158,159
+writeIEND writeIEND159,160
+
+./src/Codec/Picture/Png/Streaming/Util.hs,135
+module Codec.Picture.Png.Streaming.Util Codec.Picture.Png.Streaming.Util0,1
+expectNull expectNull9,10
+expectNull expectNull10,11
+
+./src/Codec/Picture/Png/Streaming/ChunkReaders.hs,1564
+module Codec.Picture.Png.Streaming.ChunkReaders Codec.Picture.Png.Streaming.ChunkReaders7,8
+type Pixel Pixel24,25
+data HeaderData HeaderData27,28
+  HeaderDataHeaderData28,29
+  { hdWidth hdWidth29,30
+  , hdHeight hdHeight30,31
+  , hdBitDepth hdBitDepth31,32
+  , hdColourType hdColourType32,33
+  , hdCompressionMethod hdCompressionMethod33,34
+  , hdFilterMethod hdFilterMethod34,35
+  , hdInterlaceMethod hdInterlaceMethod35,36
+deserializeHeaderData deserializeHeaderData39,40
+deserializeHeaderData deserializeHeaderData40,41
+serializeHeaderData serializeHeaderData50,51
+serializeHeaderData serializeHeaderData51,52
+data LabelledByteString LabelledByteString62,63
+  LabelledByteStringLabelledByteString63,64
+  { lbsLabel lbsLabel64,65
+  , unlabelByteString unlabelByteString65,66
+chunkReaderIHDR chunkReaderIHDR71,72
+chunkReaderIHDR chunkReaderIHDR72,73
+chunkReaderError chunkReaderError84,85
+chunkReaderError chunkReaderError85,86
+chunkReaderIgnore chunkReaderIgnore89,90
+chunkReaderIgnore chunkReaderIgnore90,91
+chunkReaderPassThrough chunkReaderPassThrough93,94
+chunkReaderPassThrough chunkReaderPassThrough94,95
+data EndMetadataOrData EndMetadataOrData98,99
+  = EMDEnd EMDEnd99,100
+  | EMDMetadata EMDMetadata100,101
+  | EMDData EMDData101,102
+instance instance104,105
+metadataReader metadataReader111,112
+metadataReader metadataReader112,113
+data EndOrData EndOrData117,118
+  = EODEnd EODEnd118,119
+  | EODData EODData119,120
+dataReader dataReader132,133
+dataReader dataReader133,134
+
+./src/Codec/Picture/Png/Streaming/Core.hs,946
+module Codec.Picture.Png.Streaming.CoreCodec.Picture.Png.Streaming.Core5,6
+type ChunkReader ChunkReader32,33
+type ChunkReader m m32,33
+type ChunkType ChunkType34,35
+type ChunkLength ChunkLength35,36
+data PNGDecodeErrorPNGDecodeError37,38
+  = IncorrectHeaderIncorrectHeader38,39
+  | CRCMismatchCRCMismatch39,40
+  | UnexpectedEOFUnexpectedEOF40,41
+  | BadChunkSize BadChunkSize41,42
+  | UnexpectedChunk UnexpectedChunk42,43
+  | UnsupportedImageTypeUnsupportedImageType43,44
+  | ExpectedEOFExpectedEOF44,45
+data PNGEncodeErrorPNGEncodeError49,50
+  = IncorrectLengthIncorrectLength50,51
+readWord32 readWord3255,56
+readWord32 readWord3256,57
+checkCRC checkCRC61,62
+checkCRC checkCRC62,63
+discardInnerBS discardInnerBS71,72
+discardInnerBS discardInnerBS72,73
+checkCRC' checkCRC'76,77
+checkCRC' checkCRC'77,78
+decodeChunk decodeChunk86,87
+checkLength checkLength121,122
+encodeChunk encodeChunk137,138
+
+./src/Codec/Picture/Png/Streaming/CRC.hs,312
+module Codec.Picture.Png.Streaming.CRC Codec.Picture.Png.Streaming.CRC0,1
+crc32Table crc32Table13,14
+crc32Table crc32Table14,15
+updateCRC32 updateCRC3226,27
+updateCRC32 updateCRC3227,28
+calcCRC32 calcCRC3235,36
+calcCRC32 calcCRC3236,37
+appendCRC32 appendCRC3242,43
+appendCRC32 appendCRC3243,44
+
+./src/Data/Functor/PullsOver.hs,202
+module Data.Functor.PullsOver Data.Functor.PullsOver7,8
+class Functor t => PullsOver PullsOver18,19
+class Functor t => PullsOver PullsOver18,19
+  pullOver pullOver26,27
+instance instance28,29
+
+./.stack-work/dist/x86_64-linux/Cabal-1.22.5.0/build/autogen/Paths_streaming_image.hs,980
+module Paths_streaming_image Paths_streaming_image0,1
+catchIO catchIO11,12
+catchIO catchIO12,13
+version version14,15
+version version15,16
+bindir, libdir, datadir, libexecdir, sysconfdir sysconfdir16,17
+bindir, libdir, datadir, libexecdir,libexecdir16,17
+bindir, libdir, datadir,datadir16,17
+bindir, libdir,libdir16,17
+bindir,bindir16,17
+bindir bindir18,19
+libdir libdir19,20
+datadir datadir20,21
+libexecdir libexecdir21,22
+sysconfdir sysconfdir22,23
+getBinDir, getLibDir, getDataDir, getLibexecDir, getSysconfDir getSysconfDir24,25
+getBinDir, getLibDir, getDataDir, getLibexecDir,getLibexecDir24,25
+getBinDir, getLibDir, getDataDir,getDataDir24,25
+getBinDir, getLibDir,getLibDir24,25
+getBinDir,getBinDir24,25
+getBinDir getBinDir25,26
+getLibDir getLibDir26,27
+getDataDir getDataDir27,28
+getLibexecDir getLibexecDir28,29
+getSysconfDir getSysconfDir29,30
+getDataFileName getDataFileName31,32
+getDataFileName getDataFileName32,33
+
+./Setup.hs,15
+main main1,2
