@@ -1,31 +1,34 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Main where
 
+import           Codec.Picture                           (DynamicImage)
+import           Codec.Picture.Png                       (writeDynamicPng)
 import           Codec.Picture.Png.Streaming
+import           Codec.Picture.Png.Streaming.JuicyPixels
 
-import           Control.Monad.Catch          (MonadThrow)
-import           Control.Monad.Trans.Resource (MonadResource, runResourceT)
-import           Data.ByteString.Streaming    (ByteString)
-import qualified Data.ByteString.Streaming    as Q
-import qualified Streaming                    as S
-import           Streaming.Prelude            (Of (..))
+import           Control.Monad                           (void)
+import           Control.Monad.IO.Class                  (MonadIO (..))
+import           Control.Monad.Trans.Resource            (MonadResource,
+                                                          runResourceT)
 
-copyPNGDataToFiles :: (MonadResource m) => FilePath -> FilePath -> ByteString m r -> m (HeaderData, r)
-copyPNGDataToFiles metaFp dataFp input =
-  let raw = decodePNGComplete input
-  in do (hdr :> metadata) <- raw
-        mainData <- Q.writeFile metaFp $ Q.concat $ S.maps unlabelByteString metadata
-        res      <- Q.writeFile dataFp $ Q.concat $ S.maps unlabelByteString mainData
-        return (hdr, res)
+import           Streaming.Prelude                       (Of (..))
 
-test :: IO HeaderData
-test = runResourceT $ fmap fst $ copyPNGDataToFiles "metadata.dat" "result.dat" $ Q.readFile "reggie.png"
+readPNG :: (MonadResource m) => FilePath -> m DynamicImage
+readPNG readPath =
+  do decoded <- decodePNGFile readPath
+     res :> _ <- imageFromStream decoded
+     return res
 
 copyPNG :: (MonadResource m) => FilePath -> FilePath -> m ()
-copyPNG readPath writePath = Q.writeFile writePath $ encodePNG $ decodePNGComplete $ Q.readFile readPath
+copyPNG readPath writePath =
+  do image <- readPNG readPath
+     liftIO . void $ writeDynamicPng writePath image
 
-test2 :: IO ()
-test2 = runResourceT $ copyPNG "reggie.png" "result.png"
+-- benchmarkMain :: IO ()
+-- benchmarkMain =
+--   defaultMain
+--   [ bench "readPNG" $ nfIO (runResourceT $ readPNG "test.png")
+--   ]
 
 main :: IO ()
-main = print =<< test2
+main = runResourceT $ copyPNG "test.png" "result.png"

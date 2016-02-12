@@ -1,4 +1,4 @@
-module Codec.Picture.Png.Streaming.CRC (calcCRC32, appendCRC32) where
+module Streaming.CRC (calcCRC32, appendCRC32) where
 
 import           Data.Bits
 import           Data.Vector.Unboxed       (Vector)
