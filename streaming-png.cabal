@@ -2,7 +2,7 @@ name:                streaming-png
 version:             0.1.0.0
 synopsis:            Perfectly streaming PNG image decoding.
 description:         Please see README.md
-homepage:            http://github.com/bch29/streaming-image#readme
+homepage:            http://github.com/bch29/streaming-png#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Bradley Hardy
@@ -19,7 +19,7 @@ executable streaming-png-demo
   build-depends:       base >= 4.7 && < 5
                      , resourcet
                      , streaming
-                     , streaming-image
+                     , streaming-png
                      , JuicyPixels >= 3.2
                      , transformers >= 0.4.2
 

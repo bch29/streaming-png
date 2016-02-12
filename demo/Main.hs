@@ -4,7 +4,7 @@ module Main where
 import           Codec.Picture                           (DynamicImage)
 import           Codec.Picture.Png                       (writeDynamicPng)
 import           Codec.Picture.Png.Streaming
-import           Codec.Picture.Png.Streaming.JuicyPixels
+import           Codec.Picture.Png.Streaming.Juicy
 
 import           Control.Monad                           (void)
 import           Control.Monad.IO.Class                  (MonadIO (..))
