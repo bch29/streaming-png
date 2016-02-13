@@ -56,3 +56,7 @@ library
 
   ghc-options:
     -Wall
+
+source-repository head
+  type: git
+  location: http://github.com/bch29/streaming-png
