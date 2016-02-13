@@ -15,6 +15,7 @@ module Codec.Picture.Png.Streaming.Juicy
 
 import           Codec.Picture
 import           Codec.Picture.Png.Streaming
+import           Codec.Picture.Png.Streaming.Util
 
 import           Control.Monad.Catch              (MonadThrow (..))
 
@@ -33,8 +34,8 @@ type MkImage m p r = (Int, Int) -> ByteString m r -> m (Of (Image p) r)
 
 bp8 :: (Monad m) => BytePacker m Word8 r
 bp8 input =
-  do BI.PS fptr offset idx :> res <- Q.toStrict input
-     return (Vec.unsafeFromForeignPtr fptr offset idx :> res)
+  do bs :> res <- Q.toStrict input
+     return (bytestringToVector bs :> res)
 
 bp16 :: (Monad m) => BytePacker m Word16 r
 bp16 input =

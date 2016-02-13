@@ -7,16 +7,20 @@ Stability: experimental
 Portability: portable
 
 -}
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Codec.Picture.Png.Streaming.Util where
 
 import           Control.Monad.Catch       (Exception, MonadThrow (..))
 import           Control.Monad.Morph       (generalize)
 import           Control.Monad.Trans       (MonadTrans (..))
+import qualified Data.ByteString.Internal  as BI
 import           Data.Functor.Identity     (Identity (..))
 import           Data.Functor.Sum          (Sum (..))
 import           Data.Int                  (Int64)
+import           Data.Vector.Storable      (Vector)
+import qualified Data.Vector.Storable      as Vec
+import           Data.Word                 (Word8)
 
 import           Data.ByteString.Streaming (ByteString)
 import qualified Data.ByteString.Streaming as Q
@@ -119,3 +123,15 @@ buildByteString build seed =
        Right (bs, seed') ->
          do bs
             buildByteString build seed'
+
+-- | Directly convert a 'BI.ByteString' into a storable 'Vector', in constant
+-- time.
+bytestringToVector :: BI.ByteString -> Vector Word8
+bytestringToVector (BI.PS fptr offset idx) = Vec.unsafeFromForeignPtr fptr offset idx
+
+-- | Directly convert a storable 'Vector' of 'Word8's into a 'BI.ByteString', in
+-- constant time.
+vectorToBytestring :: Vector Word8 -> BI.ByteString
+vectorToBytestring v
+  | (fptr, offset, idx) <- Vec.unsafeToForeignPtr v =
+    BI.PS fptr offset idx

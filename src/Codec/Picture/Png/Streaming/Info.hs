@@ -96,6 +96,26 @@ paethPredictor a b c =
         | pb <= pc -> b
         | otherwise -> c
 
+reconNone :: Word8 -> Word8 -> Word8 -> Word8 -> Word8
+reconNone _ _ _ x = x
+{-# INLINE reconNone #-}
+
+reconSub :: Word8 -> Word8 -> Word8 -> Word8 -> Word8
+reconSub a _ _ x = x + a
+{-# INLINE reconSub #-}
+
+reconUp :: Word8 -> Word8 -> Word8 -> Word8 -> Word8
+reconUp _ b _ x = x + b
+{-# INLINE reconUp #-}
+
+reconAverage :: Word8 -> Word8 -> Word8 -> Word8 -> Word8
+reconAverage a b _ x = x + fromIntegral ((fromIntegral a + fromIntegral b) `div` (2 :: Word16))
+{-# INLINE reconAverage #-}
+
+reconPaeth :: Word8 -> Word8 -> Word8 -> Word8 -> Word8
+reconPaeth a b c x = x + paethPredictor a b c
+{-# INLINE reconPaeth #-}
+
 {- |
 Given a filter type, return the reconstruction function for a single byte, if
 the filter type is valid. If @f@ is a function returned by 'getReconFunction',
@@ -111,12 +131,6 @@ getReconFunction filterType =
              , reconUp
              , reconAverage
              , reconPaeth ]
-
-      reconNone _ _ _ x = x
-      reconSub a _ _ x = x + a
-      reconUp _ b _ x = x + b
-      reconAverage a b _ x = x + fromIntegral ((fromIntegral a + fromIntegral b) `div` (2 :: Word16))
-      reconPaeth a b c x = x + paethPredictor a b c
 
   in if ftInt < length funs
      then Just (funs !! ftInt)

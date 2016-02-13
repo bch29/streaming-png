@@ -25,8 +25,11 @@ import qualified Data.ByteString                  as B
 import           Data.Functor.Identity            (Identity (..))
 import           Data.Functor.Sum                 (Sum (..))
 import           Data.Int                         (Int64)
-import           Data.Word                        (Word64)
-import qualified Data.Array as Array
+import           Control.Monad.ST (ST)
+import           Data.Foldable (forM_)
+import           Data.Word                        (Word8, Word64)
+import qualified Data.Vector.Storable      as Vec
+import qualified Data.Vector.Storable.Mutable      as Vec
 
 import           Data.ByteString.Streaming        (ByteString)
 import qualified Data.ByteString.Streaming        as Q
@@ -151,10 +154,6 @@ reconstructScanline prevByteDistance mprev filteredLine
                | i >= 0 && i < lenThis = B.index this i
                | otherwise = 0
 
-             getReconIndex i
-               | i >= 0 && i < lenThis = (Array.!) reconArray i
-               | otherwise = 0
-
              getPrevIndex =
                case mprev of
                  Just prev ->
@@ -164,17 +163,22 @@ reconstructScanline prevByteDistance mprev filteredLine
                             else 0
                  Nothing -> const 0
 
-             reconByteAt i =
+             reconByteAt v i =
                let x = getThisIndex i
-                   a = getReconIndex (i - prevByteDistance)
+                   a | i >= 0 = Vec.unsafeIndex v i
+                     | otherwise = 0
                    b = getPrevIndex i
                    c = getPrevIndex (i - prevByteDistance)
                in recon a b c x
 
-             reconArray = Array.listArray (0, lenThis - 1) (map reconByteAt [0..])
+             genScanline :: ST s (Vec.MVector s Word8)
+             genScanline =
+               do vm <- Vec.new lenThis
+                  forM_ [0..lenThis - 1] $ \i ->
+                    do v <- Vec.unsafeFreeze vm
+                       Vec.write vm i (reconByteAt v i)
+                  return vm
 
-             reconstructed = B.pack . Array.elems $ reconArray
-
-         return reconstructed
+         return (vectorToBytestring (Vec.create genScanline))
 
   | otherwise = error "reconstructScanline: empty input"

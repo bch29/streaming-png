@@ -16,11 +16,12 @@ executable streaming-png-demo
   hs-source-dirs:      demo
   main-is:             Main.hs
   default-language:    Haskell2010
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       JuicyPixels >= 3.2
+                     , base >= 4.7 && < 5
+                     , criterion >= 1.1.0.0
                      , resourcet
                      , streaming
                      , streaming-png
-                     , JuicyPixels >= 3.2
                      , transformers >= 0.4.2
 
 library
