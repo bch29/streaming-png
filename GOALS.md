@@ -5,4 +5,4 @@ Goals for improvement
 - [ ] Decode interlaced images
 - [ ] Decode paletted images
 - [ ] Provide access to metadata (such as iTXT chunks)
-- [ ] Improve support for encoding images
+- [ ] Support encoding images
