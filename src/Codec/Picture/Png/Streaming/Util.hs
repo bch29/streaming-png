@@ -1,3 +1,12 @@
+{-|
+Module : Codec.Picture.Png.Streaming.Util
+Copyright : (c) Bradley Hardy 2016
+License: LGPL3
+Maintainer: bradleyhardy@live.com
+Stability: experimental
+Portability: portable
+
+-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Codec.Picture.Png.Streaming.Util where
@@ -8,7 +17,6 @@ import           Control.Monad.Trans       (MonadTrans (..))
 import           Data.Functor.Identity     (Identity (..))
 import           Data.Functor.Sum          (Sum (..))
 import           Data.Int                  (Int64)
-import           Data.Maybe                  (fromJust)
 
 import           Data.ByteString.Streaming (ByteString)
 import qualified Data.ByteString.Streaming as Q
@@ -16,19 +24,6 @@ import           Streaming                 (Stream)
 import qualified Streaming                 as S
 import           Streaming.Prelude         (Of (..))
 import qualified Streaming.Prelude         as S
-
-buildByteString
-  :: Monad m
-     => (a -> m (Either r (ByteString m (), a)))
-     -> a
-     -> ByteString m r
-buildByteString build seed =
-  do mx <- lift $ build seed
-     case mx of
-       Left r -> return r
-       Right (bs, seed') ->
-         do bs
-            buildByteString build seed'
 
 -- | If the input 'ByteString' is empty, return its result. Otherwise throw the
 -- provided error value.
@@ -109,3 +104,18 @@ filtered
 filtered f =
   let f' x = maybe (InR x) (InL . Identity) <$> f x
   in filterMapped f'
+
+
+-- | Build a 'ByteString' monadically from a seed.
+buildByteString
+  :: Monad m
+     => (a -> m (Either r (ByteString m (), a)))
+     -> a
+     -> ByteString m r
+buildByteString build seed =
+  do mx <- lift $ build seed
+     case mx of
+       Left r -> return r
+       Right (bs, seed') ->
+         do bs
+            buildByteString build seed'

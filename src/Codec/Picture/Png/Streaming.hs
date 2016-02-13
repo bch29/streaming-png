@@ -13,7 +13,7 @@ A perfectly streaming PNG decoding library.
 module Codec.Picture.Png.Streaming
        (
          -- * Types
-         PNGDecodeError
+         PNGDecodeError(..)
        , DecodedPNG
        , HeaderData(..)
 
@@ -24,10 +24,12 @@ module Codec.Picture.Png.Streaming
        , decodeHeader
 
          -- * Misc
+       , ChunkType
        , BitDepth
        , ColourType
        , CompressionMethod
        , FilterMethod
+       , FilterType
        , InterlaceMethod
 
        , isColourTypeSupported
@@ -43,27 +45,24 @@ import           Codec.Picture.Png.Streaming.Info
 import           Codec.Picture.Png.Streaming.MainData
 import           Codec.Picture.Png.Streaming.Util
 
-import           Control.Monad                        (ap, join, unless, when)
+import           Control.Monad                        (unless)
 import           Control.Monad.Catch                  (MonadThrow (..))
 import           Control.Monad.IO.Class               (MonadIO (..))
-import           Control.Monad.Morph                  (hoist)
 import           Control.Monad.Trans                  (MonadTrans (..))
 import           Control.Monad.Trans.Resource         (MonadResource)
-import           Data.Functor.Identity                (Identity (..))
-import           Data.Functor.Sum                     (Sum (..))
 
-import qualified Data.ByteString                      as B
 import           Data.ByteString.Streaming            (ByteString)
 import qualified Data.ByteString.Streaming            as Q
-import qualified Streaming                            as S
-import           Streaming.Prelude                    (Of (..), Stream)
+import           Streaming.Prelude                    (Of (..))
 
+-- | A decoded PNG: header information followed by decoded pixel data whose
+-- format depends on the image's colour type and bit depth.
 type DecodedPNG m r = Of HeaderData (ByteString m r)
 
 {-|
 Decode a PNG from the given raw streaming 'ByteString'. The result is header
 information followed by a stream of bytes that can be interpreted directly as
-pixels whose format depends on the image's colour type.
+pixels whose format depends on the image's colour type and bit depth.
 
 Any remaining data after the end of the PNG image is returned untouched.
 -}
@@ -90,7 +89,7 @@ decodeHeader input =
 {-|
 Decode a PNG from the given raw streaming 'ByteString'. The result is header
 information followed by a stream of bytes that can be interpreted directly as
-pixels whose format depends on the image's colour type.
+pixels whose format depends on the image's colour type and bit depth.
 
 If there is any more data after the end of the PNG image, an 'ExpectedEOF'
 exception is thrown.
@@ -104,7 +103,7 @@ decodePNGComplete input =
 {-|
 Decode a PNG from the given file. The result is header information followed by a
 stream of bytes that can be interpreted directly as pixels whose format depends
-on the image's colour type.
+on the image's colour type and bit depth.
 
 If there is any more data after the end of the PNG image, an 'ExpectedEOF'
 exception is thrown.
@@ -135,7 +134,7 @@ isCompressionMethodSupported = (== 0)
 isFilterMethodSupported :: FilterMethod -> Bool
 isFilterMethodSupported = (== 0)
 
--- | Is the given PNG interlace method supported? Currently no interlace methods
--- are supported.
+-- | Is the given PNG interlace method supported? Currently only the null
+-- interlace method (no interlacing) is supported.
 isInterlaceMethodSupported :: InterlaceMethod -> Bool
 isInterlaceMethodSupported = (== 0)

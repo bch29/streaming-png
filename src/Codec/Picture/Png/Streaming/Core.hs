@@ -1,3 +1,13 @@
+{-|
+Module : Codec.Picture.Png.Streaming.Core
+Copyright : (c) Bradley Hardy 2016
+License: LGPL3
+Maintainer: bradleyhardy@live.com
+Stability: experimental
+Portability: portable
+
+-}
+
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DeriveFunctor         #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -144,8 +154,8 @@ decodeChunk input =
 -- at the head of the chunk to maintain streaming.
 encodeChunk
   :: (MonadThrow m)
-     => PNGChunk m r   -- | The data segment to write.
-     -> ByteString m r -- | The resulting data encoded as a PNG chunk.
+     => PNGChunk m r   -- ^ The data segment to write.
+     -> ByteString m r -- ^ The resulting data encoded as a PNG chunk.
 encodeChunk PNGChunk{..} =
   do let lenBS = C.runPut . C.putWord32be $ chunkLength
 

@@ -1,3 +1,13 @@
+{-|
+Module : Codec.Picture.Png.Streaming.Info
+Copyright : (c) Bradley Hardy 2016
+License: LGPL3
+Maintainer: bradleyhardy@live.com
+Stability: experimental
+Portability: portable
+
+-}
+
 {-# LANGUAGE MultiWayIf        #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Codec.Picture.Png.Streaming.Info where
@@ -6,17 +16,41 @@ import qualified Data.ByteString as B
 import           Data.Int        (Int16)
 import           Data.Word       (Word16, Word32, Word8)
 
+-- | A chunk type, represented as a 'B.ByteString' of length 4.
 type ChunkType = B.ByteString
+
+-- | A chunk length.
 type ChunkLength = Word32
+
+-- | A colour type.
 type ColourType = Word8
+
+-- | A bit depth.
 type BitDepth = Word8
+
+-- | A PNG compression method (distinct from the type in 'Streaming.Zlib' of the
+-- same name).
 type CompressionMethod = Word8
+
+-- | A PNG filtering method.
 type FilterMethod = Word8
+
+-- | A PNG interlacing method.
 type InterlaceMethod = Word8
 
-ctIHDR, ctIDAT, ctIEND :: ChunkType
+-- | A PNG filter type, for filter method 0.
+type FilterType = Word8
+
+-- | The 4-byte identifier for a PNG header chunk.
+ctIHDR :: ChunkType
 ctIHDR = "IHDR"
+
+-- | The 4-byte identifier for a PNG data chunk.
+ctIDAT :: ChunkType
 ctIDAT = "IDAT"
+
+-- | The 4-byte identifier for a PNG ending chunk.
+ctIEND :: ChunkType
 ctIEND = "IEND"
 
 -- | The 8-byte signature for a PNG file.
@@ -44,8 +78,6 @@ getBitsPerPixel bitDepth colourType
   | colourType == 6 && bitDepth == 8 || bitDepth == 16  = Just (bitDepth * 4)
     -- unknown
   | otherwise = Nothing
-
-type FilterType = Word8
 
 -- | The Paeth predictor function due to Alan W. Paeth.
 paethPredictor :: Word8 -> Word8 -> Word8 -> Word8

@@ -1,3 +1,12 @@
+{-|
+Module : Streaming.CRC
+Copyright : (c) Bradley Hardy 2016
+License: LGPL3
+Maintainer: bradleyhardy@live.com
+Stability: experimental
+Portability: portable
+
+-}
 module Streaming.CRC (calcCRC32, appendCRC32) where
 
 import           Data.Bits

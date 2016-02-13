@@ -1,3 +1,12 @@
+{-|
+Module : Codec.Picture.Png.Streaming.Juicy
+Copyright : (c) Bradley Hardy 2016
+License: LGPL3
+Maintainer: bradleyhardy@live.com
+Stability: experimental
+Portability: portable
+
+-}
 {-# LANGUAGE MultiWayIf      #-}
 {-# LANGUAGE RecordWildCards #-}
 module Codec.Picture.Png.Streaming.Juicy
@@ -6,7 +15,6 @@ module Codec.Picture.Png.Streaming.Juicy
 
 import           Codec.Picture
 import           Codec.Picture.Png.Streaming
-import           Codec.Picture.Png.Streaming.Core
 
 import           Control.Monad.Catch              (MonadThrow (..))
 

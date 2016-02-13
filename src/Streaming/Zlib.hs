@@ -1,3 +1,12 @@
+{-|
+Module : Streaming.Zlib
+Copyright : (c) Bradley Hardy 2016
+License: LGPL3
+Maintainer: bradleyhardy@live.com
+Stability: experimental
+Portability: portable
+
+-}
 {-# LANGUAGE OverloadedStrings #-}
 module Streaming.Zlib
        (
@@ -14,17 +23,18 @@ module Streaming.Zlib
        , defaultCompressionLevel)
        where
 
-import Codec.Picture.Png.Streaming.Util
+import           Codec.Picture.Png.Streaming.Util
 
-import           Data.Streaming.Zlib                (WindowBits, defaultWindowBits, PopperRes(PRDone, PRNext, PRError), Popper)
-import qualified Data.Streaming.Zlib                as Z
+import           Data.Streaming.Zlib              (Popper, PopperRes (PRDone, PRNext, PRError),
+                                                   WindowBits,
+                                                   defaultWindowBits)
+import qualified Data.Streaming.Zlib              as Z
 
-import           Control.Monad.IO.Class    (MonadIO (..))
-import           Control.Monad.Catch       (MonadThrow (..))
+import           Control.Monad.Catch              (MonadThrow (..))
+import           Control.Monad.IO.Class           (MonadIO (..))
 
-import qualified Data.ByteString           as B
-import           Data.ByteString.Streaming (ByteString)
-import qualified Data.ByteString.Streaming as Q
+import           Data.ByteString.Streaming        (ByteString)
+import qualified Data.ByteString.Streaming        as Q
 
 exhaustPopper
   :: (MonadIO m, MonadThrow m)
@@ -69,6 +79,7 @@ decompressStream
      -> ByteString m r
 decompressStream = decompressStream' defaultWindowBits
 
+-- | An integer between 0 and 9.
 type CompressionLevel = Int
 
 -- | The default compression level is 6.
@@ -106,9 +117,3 @@ compressStream
      => ByteString m r
      -> ByteString m r
 compressStream = compressStream' defaultCompressionLevel defaultWindowBits
-
-testStr :: ByteString IO ()
-testStr = "hello, my name is Brad"
-
-test :: IO B.ByteString
-test = Q.toStrict_ $ decompressStream $ compressStream testStr

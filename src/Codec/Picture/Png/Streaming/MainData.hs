@@ -1,3 +1,12 @@
+{-|
+Module : Codec.Picture.Png.Streaming.MainData
+Copyright : (c) Bradley Hardy 2016
+License: LGPL3
+Maintainer: bradleyhardy@live.com
+Stability: experimental
+Portability: portable
+
+-}
 {-# LANGUAGE RecordWildCards #-}
 module Codec.Picture.Png.Streaming.MainData
        ( decodeImageData )

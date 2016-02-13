@@ -1,3 +1,13 @@
+{-|
+Module : Codec.Picture.Png.Streaming.Header
+Copyright : (c) Bradley Hardy 2016
+License: LGPL3
+Maintainer: bradleyhardy@live.com
+Stability: experimental
+Portability: portable
+
+-}
+
 {-# LANGUAGE RecordWildCards #-}
 module Codec.Picture.Png.Streaming.Header
        ( HeaderData(..)
@@ -15,7 +25,7 @@ import           Control.Monad.Catch              (MonadThrow (..))
 
 import qualified Data.ByteString                  as B
 import qualified Data.Serialize                   as C
-import           Data.Word                        (Word8, Word32)
+import           Data.Word                        (Word32)
 
 import           Data.ByteString.Streaming        (ByteString)
 import qualified Data.ByteString.Streaming        as Q
@@ -30,9 +40,9 @@ data HeaderData =
   , hdHeight            :: Word32
   , hdBitDepth          :: BitDepth
   , hdColourType        :: ColourType
-  , hdCompressionMethod :: Word8
-  , hdFilterMethod      :: Word8
-  , hdInterlaceMethod   :: Word8
+  , hdCompressionMethod :: CompressionMethod
+  , hdFilterMethod      :: FilterMethod
+  , hdInterlaceMethod   :: InterlaceMethod
   }
   deriving (Show)
 
@@ -59,15 +69,15 @@ deserializeHeaderData = C.runGet $
      hdInterlaceMethod   <- C.getWord8
      return HeaderData{..}
 
-serializeHeaderData :: HeaderData -> B.ByteString
-serializeHeaderData HeaderData{..} = C.runPut $
-  do C.putWord32be hdWidth
-     C.putWord32be hdHeight
-     C.putWord8 hdBitDepth
-     C.putWord8 hdColourType
-     C.putWord8 hdCompressionMethod
-     C.putWord8 hdFilterMethod
-     C.putWord8 hdInterlaceMethod
+-- serializeHeaderData :: HeaderData -> B.ByteString
+-- serializeHeaderData HeaderData{..} = C.runPut $
+--   do C.putWord32be hdWidth
+--      C.putWord32be hdHeight
+--      C.putWord8 hdBitDepth
+--      C.putWord8 hdColourType
+--      C.putWord8 hdCompressionMethod
+--      C.putWord8 hdFilterMethod
+--      C.putWord8 hdInterlaceMethod
 
 -- | Try to decode a PNG header from a ByteString, failing if it is of the wrong
 -- length.
