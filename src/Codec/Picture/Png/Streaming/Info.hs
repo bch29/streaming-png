@@ -108,30 +108,30 @@ reconUp :: Word8 -> Word8 -> Word8 -> Word8 -> Word8
 reconUp _ b _ x = x + b
 {-# INLINE reconUp #-}
 
-reconAverage :: Word8 -> Word8 -> Word8 -> Word8 -> Word8
-reconAverage a b _ x = x + fromIntegral ((fromIntegral a + fromIntegral b) `div` (2 :: Word16))
+reconAverage :: Word8 -> Word8 -> Word8 -> Word8
+reconAverage a b x = x + fromIntegral ((fromIntegral a + fromIntegral b) `div` (2 :: Word16))
 {-# INLINE reconAverage #-}
 
 reconPaeth :: Word8 -> Word8 -> Word8 -> Word8 -> Word8
 reconPaeth a b c x = x + paethPredictor a b c
 {-# INLINE reconPaeth #-}
 
-{- |
-Given a filter type, return the reconstruction function for a single byte, if
-the filter type is valid. If @f@ is a function returned by 'getReconFunction',
-the correct argument order is @f a b c x@, where those variable names match the
-ones used in the <http://www.w3.org/TR/PNG/#9Filter-types PNG specification,
-section 9.2>.
--}
-getReconFunction :: FilterType -> Maybe (Word8 -> Word8 -> Word8 -> Word8 -> Word8)
-getReconFunction filterType =
-  let ftInt = fromIntegral filterType
-      funs = [ reconNone
-             , reconSub
-             , reconUp
-             , reconAverage
-             , reconPaeth ]
+-- {- |
+-- Given a filter type, return the reconstruction function for a single byte, if
+-- the filter type is valid. If @f@ is a function returned by 'getReconFunction',
+-- the correct argument order is @f a b c x@, where those variable names match the
+-- ones used in the <http://www.w3.org/TR/PNG/#9Filter-types PNG specification,
+-- section 9.2>.
+-- -}
+-- getReconFunction :: FilterType -> Maybe (Word8 -> Word8 -> Word8 -> Word8 -> Word8)
+-- getReconFunction filterType =
+--   let ftInt = fromIntegral filterType
+--       funs = [ reconNone
+--              , reconSub
+--              , reconUp
+--              , reconAverage
+--              , reconPaeth ]
 
-  in if ftInt < length funs
-     then Just (funs !! ftInt)
-     else Nothing
+--   in if ftInt < length funs
+--      then Just (funs !! ftInt)
+--      else Nothing

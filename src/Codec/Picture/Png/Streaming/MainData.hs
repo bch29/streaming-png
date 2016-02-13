@@ -132,10 +132,8 @@ reconstructScanlines prevByteDistance
 
 Given a filtered scanline (whose first byte encodes the filter method), along
 with the previous unfiltered scanline (which is 'Nothing' if we're at the first
-scanline), reconstruct the pixel data. Fails at runtime if the filtered scanline
-is empty.
-
-TODO: This is the main bottleneck by far. Investigate optimisations.
+scanline), reconstruct the pixel data. Fails at runtime, possible even with a
+segfault, if either input scanline is the wrong size.
 
 -}
 reconstructScanline
@@ -146,39 +144,70 @@ reconstructScanline
      -> m B.ByteString
 reconstructScanline prevByteDistance mprev filteredLine
   | Just (filterType, this) <- B.uncons filteredLine =
-      do recon <- maybe (throwM (UnsupportedFilterType filterType)) return (getReconFunction filterType)
+      let lenThis = B.length this
 
-         let lenThis = B.length this
+          -- This is a giant ugly mess, but it's super-fast. Can it be
+          -- refactored into something nicer while retaining its speed?
+          genScanline :: ST s (Vec.MVector s Word8)
+          genScanline
+            | filterType == 0 = Vec.unsafeThaw (bytestringToVector this)
+            | filterType == 1 =
+              do v <- Vec.new lenThis
+                 forM_ [0..lenThis - 1] $ \i ->
+                   do a <- if i >= prevByteDistance
+                           then Vec.read v (i - prevByteDistance)
+                           else return 0
+                      Vec.write v i (B.index this i + a)
+                 return v
+            | filterType == 2 =
+              case mprev of
+                Just prev ->
+                  Vec.unsafeThaw $ Vec.generate lenThis $ \i ->
+                  B.index prev i + B.index this i
+                Nothing -> Vec.unsafeThaw (bytestringToVector this)
+            | filterType == 3 =
+              case mprev of
+                Just prev ->
+                  do v <- Vec.new lenThis
+                     forM_ [0..lenThis - 1] $ \i ->
+                       do a <- if i >= prevByteDistance
+                               then Vec.read v (i - prevByteDistance)
+                               else return 0
+                          Vec.write v i (reconAverage a (B.index prev i) (B.index this i))
+                     return v
+                Nothing ->
+                  do v <- Vec.new lenThis
+                     forM_ [0..lenThis - 1] $ \i ->
+                       do a <- if i >= prevByteDistance
+                               then Vec.read v (i - prevByteDistance)
+                               else return 0
+                          Vec.write v i (reconAverage a 0 (B.index this i))
+                     return v
+            | filterType == 4 =
+              case mprev of
+                Just prev ->
+                  do v <- Vec.new lenThis
+                     forM_ [0..lenThis - 1] $ \i ->
+                       do (a, c) <- if i >= prevByteDistance
+                                    then do a <- Vec.read v (i - prevByteDistance)
+                                            return (a, B.index prev (i - prevByteDistance))
+                                    else return (0, 0)
+                          Vec.write v i (reconPaeth a (B.index prev i) c (B.index this i))
+                     return v
+                Nothing ->
+                  do v <- Vec.new lenThis
+                     forM_ [0..lenThis - 1] $ \i ->
+                       do a <- if i >= prevByteDistance
+                               then Vec.read v (i - prevByteDistance)
+                               else return 0
+                          Vec.write v i (reconPaeth a 0 0 (B.index this i))
+                     return v
+            | otherwise = Vec.new 0
 
-             getThisIndex i
-               | i >= 0 && i < lenThis = B.index this i
-               | otherwise = 0
+          res = vectorToBytestring (Vec.create genScanline)
 
-             getPrevIndex =
-               case mprev of
-                 Just prev ->
-                   let lenPrev = B.length prev
-                   in \i -> if i >= 0 && i < lenPrev
-                            then B.index prev i
-                            else 0
-                 Nothing -> const 0
-
-             reconByteAt v i =
-               let x = getThisIndex i
-                   a | i >= 0 = Vec.unsafeIndex v i
-                     | otherwise = 0
-                   b = getPrevIndex i
-                   c = getPrevIndex (i - prevByteDistance)
-               in recon a b c x
-
-             genScanline :: ST s (Vec.MVector s Word8)
-             genScanline =
-               do vm <- Vec.new lenThis
-                  forM_ [0..lenThis - 1] $ \i ->
-                    do v <- Vec.unsafeFreeze vm
-                       Vec.write vm i (reconByteAt v i)
-                  return vm
-
-         return (vectorToBytestring (Vec.create genScanline))
+         in if B.length res == lenThis
+            then return res
+            else throwM (UnsupportedFilterType filterType)
 
   | otherwise = error "reconstructScanline: empty input"

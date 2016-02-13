@@ -11,7 +11,9 @@ packages:
 extra-deps: []
 
 # Override default flag values for local packages and extra-deps
-flags: {}
+flags:
+  streaming-png:
+    build-demo: false
 
 # Extra package databases containing global packages
 extra-package-dbs: []
