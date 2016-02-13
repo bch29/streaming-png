@@ -1,7 +1,9 @@
 {-# LANGUAGE RecordWildCards #-}
 module Codec.Picture.Png.Streaming.Header
        ( HeaderData(..)
-       , takeHeaderData )
+       , takeHeaderData
+       , tryDecodeHeader
+       )
        where
 
 import           Codec.Picture.Png.Streaming.Core
@@ -34,6 +36,18 @@ data HeaderData =
   }
   deriving (Show)
 
+-- | Take the header data from the front of a stream and return the remainder.
+-- Throws an 'UnexpectedChunk' exception if the first chunk isn't of type
+-- "IHDR", or 'UnexpectedEOF' if the stream is empty.
+takeHeaderData :: (MonadThrow m) => Stream (PNGChunk m) m r -> m (Of HeaderData (Stream (PNGChunk m) m r))
+takeHeaderData input =
+  do maybeChunk <- S.inspect input
+     case maybeChunk of
+       Left _ -> throwM UnexpectedEOF
+       Right PNGChunk{..} ->
+         do unless (chunkType == ctIHDR) (throwM (UnexpectedChunk chunkType))
+            tryDecodeHeader chunkData
+
 deserializeHeaderData :: B.ByteString -> Either String HeaderData
 deserializeHeaderData = C.runGet $
   do hdWidth             <- C.getWord32be
@@ -54,18 +68,6 @@ serializeHeaderData HeaderData{..} = C.runPut $
      C.putWord8 hdCompressionMethod
      C.putWord8 hdFilterMethod
      C.putWord8 hdInterlaceMethod
-
--- | Take the header data from the front of a stream and return the remainder.
--- Throws an 'UnexpectedChunk' exception if the first chunk isn't of type
--- "IHDR", or 'UnexpectedEOF' if the stream is empty.
-takeHeaderData :: (MonadThrow m) => Stream (PNGChunk m) m r -> m (Of HeaderData (Stream (PNGChunk m) m r))
-takeHeaderData input =
-  do maybeChunk <- S.inspect input
-     case maybeChunk of
-       Left _ -> throwM UnexpectedEOF
-       Right PNGChunk{..} ->
-         do unless (chunkType == ctIHDR) (throwM (UnexpectedChunk chunkType))
-            tryDecodeHeader chunkData
 
 -- | Try to decode a PNG header from a ByteString, failing if it is of the wrong
 -- length.

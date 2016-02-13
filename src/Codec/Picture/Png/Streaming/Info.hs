@@ -23,6 +23,7 @@ ctIEND = "IEND"
 pngSignature :: B.ByteString
 pngSignature = "\137PNG\r\n\26\n"
 
+-- | The length of the header chunk.
 ihdrLength :: ChunkLength
 ihdrLength = 13
 

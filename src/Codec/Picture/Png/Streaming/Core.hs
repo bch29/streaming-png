@@ -14,6 +14,7 @@ module Codec.Picture.Png.Streaming.Core
        , PNGChunk(..)
        , decodePNGChunks
        , encodePNGChunks
+       , decodeChunk
        )
        where
 

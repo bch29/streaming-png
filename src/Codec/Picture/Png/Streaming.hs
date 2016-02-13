@@ -1,7 +1,15 @@
-{-# LANGUAGE ConstraintKinds   #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes        #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-|
+Module : Codec.Picture.Png.Streaming
+Copyright : (c) Bradley Hardy 2016
+License: LGPL3
+Maintainer: bradleyhardy@live.com
+Stability: experimental
+Portability: portable
+
+A perfectly streaming PNG decoding library.
+-}
+
+{-# LANGUAGE RecordWildCards #-}
 module Codec.Picture.Png.Streaming
        (
          -- * Types
@@ -13,6 +21,7 @@ module Codec.Picture.Png.Streaming
        , decodePNG
        , decodePNGComplete
        , decodePNGFile
+       , decodeHeader
 
          -- * Misc
        , BitDepth
@@ -36,7 +45,7 @@ import           Codec.Picture.Png.Streaming.Util
 
 import           Control.Monad                        (ap, join, unless, when)
 import           Control.Monad.Catch                  (MonadThrow (..))
-import           Control.Monad.IO.Class               (MonadIO(..))
+import           Control.Monad.IO.Class               (MonadIO (..))
 import           Control.Monad.Morph                  (hoist)
 import           Control.Monad.Trans                  (MonadTrans (..))
 import           Control.Monad.Trans.Resource         (MonadResource)
@@ -63,6 +72,20 @@ decodePNG input =
   do (hd :> rest) <- takeHeaderData (decodePNGChunks input)
      unless (isImageTypeSupported hd) (throwM UnsupportedImageType)
      return (hd :> decodeImageData hd rest)
+
+{-|
+Decode just the PNG header data from the given raw streaming 'ByteString',
+inspecting the minimum number of bytes from the input necessary to do so. The
+remaining bytes are returned also.
+-}
+decodeHeader :: (MonadThrow m) => ByteString m r -> m (Of HeaderData (ByteString m r))
+decodeHeader input =
+  do PNGChunk{..} <-
+       either (const $ throwM UnexpectedEOF) return
+       =<< decodeChunk input
+
+     unless (chunkType == ctIHDR) (throwM (UnexpectedChunk chunkType))
+     tryDecodeHeader chunkData
 
 {-|
 Decode a PNG from the given raw streaming 'ByteString'. The result is header
