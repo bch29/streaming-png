@@ -29,6 +29,8 @@ import           Data.Int                           (Int64)
 import qualified Data.Vector.Storable               as Vec
 import qualified Data.Vector.Storable.Mutable       as Vec
 import           Data.Word                          (Word64)
+import           Data.Foldable                          (minimumBy)
+import           Data.Ord                          (comparing)
 
 import           Data.ByteString.Streaming          (ByteString)
 import qualified Data.ByteString.Streaming          as Q
@@ -104,7 +106,7 @@ getScanlineLengthBytes HeaderData{..}
 
 -- | Split a stream of raw, decompressed, PNG image data into scanlines.
 splitImageDataByScanlines
-  :: (Monad m, MonadThrow m)
+  :: (MonadThrow m)
      => HeaderData
      -> ByteString m r
      -> Stream (ByteString m) m r
@@ -119,7 +121,7 @@ type FilteredScanline = B.ByteString
 
 -- | Given a stream of filtered scanlines, reconstruct each of them.
 reconstructScanlines
-  :: (MonadThrow m, MonadIO m)
+  :: (MonadThrow m)
      => Int
      -> Stream (ByteString m) m r
      -> Stream (Of UnfilteredScanline) m r
@@ -141,11 +143,11 @@ Also, it still takes up roughly 50% of the running time of decoding a PNG. Maybe
 it can be made even faster?
 -}
 reconstructScanline
-  :: (MonadThrow m, MonadIO m)
+  :: (MonadThrow m)
      => Int
      -> Maybe UnfilteredScanline
      -> FilteredScanline
-     -> m B.ByteString
+     -> m UnfilteredScanline
 reconstructScanline prevByteDistance mprev filteredLine
   | Just (filterType, this) <- B.uncons filteredLine =
       let lenThis = B.length this
@@ -228,3 +230,107 @@ reconstructScanline prevByteDistance mprev filteredLine
             else throwM (UnsupportedFilterType filterType)
 
   | otherwise = error "reconstructScanline: empty input"
+
+filterScanlineFixed
+  :: Int
+  -> Maybe FilteredScanline
+  -> UnfilteredScanline
+  -> FilterType
+  -> FilteredScanline
+filterScanlineFixed prevByteDistance mprev this filterType =
+  let lenThis = B.length this
+
+      -- This function is equivalent to @forM_ [0 .. lenThis - 1]@, but
+      -- slightly faster in my benchmarks
+      loop :: Monad m => (Int -> m ()) -> m ()
+      loop action = go 0
+        where
+          go n | n < lenThis = do action n; go (n + 1)
+               | otherwise = return ()
+      {-# INLINE loop #-}
+
+      noFilter = this
+
+      subFilter = vectorToBytestring $ Vec.create $
+        do v <- Vec.new lenThis
+           loop $ \i ->
+             do a <- if i >= prevByteDistance
+                     then Vec.read v (i - prevByteDistance)
+                     else return 0
+                Vec.write v i (B.unsafeIndex this i - a)
+           return v
+
+      upFilter =
+        case mprev of
+          Just prev ->
+            vectorToBytestring $ Vec.generate lenThis $ \i ->
+              B.unsafeIndex this i - B.unsafeIndex prev i
+          Nothing -> this
+
+      averageFilter = vectorToBytestring $ Vec.create $
+        case mprev of
+          Just prev ->
+            do v <- Vec.new lenThis
+               loop $ \i ->
+                 do a <- if i >= prevByteDistance
+                         then Vec.read v (i - prevByteDistance)
+                         else return 0
+                    Vec.write v i (filterAverage a (B.unsafeIndex prev i) (B.unsafeIndex this i))
+               return v
+          Nothing ->
+            do v <- Vec.new lenThis
+               loop $ \i ->
+                 do a <- if i >= prevByteDistance
+                         then Vec.read v (i - prevByteDistance)
+                         else return 0
+                    Vec.write v i (filterAverage a 0 (B.unsafeIndex this i))
+               return v
+
+      paethFilter = vectorToBytestring $ Vec.create $
+        case mprev of
+          Just prev ->
+            do v <- Vec.new lenThis
+               loop $ \i ->
+                 do (a, c) <- if i >= prevByteDistance
+                              then do a <- Vec.read v (i - prevByteDistance)
+                                      return (a, B.unsafeIndex prev (i - prevByteDistance))
+                              else return (0, 0)
+                    Vec.write v i (filterPaeth a (B.unsafeIndex prev i) c (B.unsafeIndex this i))
+               return v
+          Nothing ->
+            do v <- Vec.new lenThis
+               loop $ \i ->
+                 do a <- if i >= prevByteDistance
+                         then Vec.read v (i - prevByteDistance)
+                         else return 0
+                    Vec.write v i (filterPaeth a 0 0 (B.unsafeIndex this i))
+               return v
+
+      res | filterType == 0 = noFilter
+          | filterType == 1 = subFilter
+          | filterType == 2 = upFilter
+          | filterType == 3 = averageFilter
+          | filterType == 4 = paethFilter
+          | otherwise = error "filterScanlineFixed: bad filter type"
+
+  in res
+
+-- | Calculate the absolute value of the signed sum of the input bytes.
+absSumBytes :: B.ByteString -> Int64
+absSumBytes = abs . B.foldl' addSigned 0
+  where addSigned a b = a + fromIntegral b - 128
+
+data FilterHeuristic
+  = FixedFilter FilterType
+  | MinAbsSum
+
+filterScanline
+  :: FilterHeuristic
+  -> Int
+  -> Maybe FilteredScanline
+  -> UnfilteredScanline
+  -> FilteredScanline
+filterScanline (FixedFilter filterType) pbd mprev this = filterScanlineFixed pbd mprev this filterType
+filterScanline MinAbsSum pbd mprev this =
+  let differentMethods = map (filterScanlineFixed pbd mprev this) [0..4]
+  in minimumBy (comparing absSumBytes) differentMethods

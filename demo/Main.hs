@@ -8,7 +8,7 @@ import           Codec.Picture.Png.Streaming.Juicy
 
 import           Control.Monad                     (void)
 import           Control.Monad.IO.Class            (MonadIO (..))
-import           Control.Monad.Trans.Resource      (MonadResource)
+import           Control.Monad.Trans.Resource      (MonadResource, runResourceT)
 
 import qualified Data.ByteString                   as B
 
@@ -39,20 +39,24 @@ fstOf (x :> _) = x
 
 benchImage :: (String, B.ByteString) -> [Benchmark]
 benchImage (path, image) =
-  [ bench ("read " ++ path ++ " with JuicyPixels") . nf Juicy.decodePng $ image
-  , bench ("read " ++ path ++ " with streaming") . nfIO $ decodeBS image
+  -- [ bench ("read " ++ path ++ " with JuicyPixels") . nf Juicy.decodePng $ image
+  [ bench ("read " ++ path ++ " with streaming") . nfIO $ decodeBS image
   ]
 
 benchmarkMain :: IO ()
 benchmarkMain =
-  do largeFile <- B.readFile "large.png"
+  do hugeFile <- B.readFile "huge.png"
+     largeFile <- B.readFile "large.png"
      mediumFile <- B.readFile "medium.png"
      smallFile <- B.readFile "small.png"
 
-     defaultMain (benchImage =<< [ ("small.png", smallFile)
-                                 , ("medium.png", mediumFile)
-                                 , ("large.png", largeFile)])
+     defaultMain $ benchImage =<< [("huge.png", hugeFile)]
+       -- [ ("small.png", smallFile)
+       -- , ("medium.png", mediumFile)
+       -- , ("large.png", largeFile)
+       -- , ("huge.png", hugeFile)
+       -- ]
 
 main :: IO ()
--- main = runResourceT $ copyPNG "large.png" "result.png"
+-- main = runResourceT $ copyPNG "huge.png" "result.png"
 main = benchmarkMain

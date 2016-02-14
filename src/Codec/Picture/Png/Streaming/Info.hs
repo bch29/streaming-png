@@ -96,17 +96,13 @@ paethPredictor a b c =
         | pb <= pc -> b
         | otherwise -> c
 
-reconNone :: Word8 -> Word8 -> Word8 -> Word8 -> Word8
-reconNone _ _ _ x = x
-{-# INLINE reconNone #-}
+filterAverage :: Word8 -> Word8 -> Word8 -> Word8
+filterAverage a b x = x - fromIntegral ((fromIntegral a + fromIntegral b) `div` (2 :: Word16))
+{-# INLINE filterAverage #-}
 
-reconSub :: Word8 -> Word8 -> Word8 -> Word8 -> Word8
-reconSub a _ _ x = x + a
-{-# INLINE reconSub #-}
-
-reconUp :: Word8 -> Word8 -> Word8 -> Word8 -> Word8
-reconUp _ b _ x = x + b
-{-# INLINE reconUp #-}
+filterPaeth :: Word8 -> Word8 -> Word8 -> Word8 -> Word8
+filterPaeth a b c x = x - paethPredictor a b c
+{-# INLINE filterPaeth #-}
 
 reconAverage :: Word8 -> Word8 -> Word8 -> Word8
 reconAverage a b x = x + fromIntegral ((fromIntegral a + fromIntegral b) `div` (2 :: Word16))
