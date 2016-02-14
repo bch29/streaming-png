@@ -13,28 +13,27 @@ module Codec.Picture.Png.Streaming.MainData
        where
 
 import           Codec.Picture.Png.Streaming.Core
+import           Codec.Picture.Png.Streaming.Header
 import           Codec.Picture.Png.Streaming.Info
 import           Codec.Picture.Png.Streaming.Util
-import           Codec.Picture.Png.Streaming.Header
 import           Streaming.Zlib
 
-import           Control.Monad.Catch              (MonadThrow (..))
-import           Control.Monad.IO.Class           (MonadIO(..))
+import           Control.Monad.Catch                (MonadThrow (..))
+import           Control.Monad.IO.Class             (MonadIO (..))
 
-import qualified Data.ByteString                  as B
-import           Data.Functor.Identity            (Identity (..))
-import           Data.Functor.Sum                 (Sum (..))
-import           Data.Int                         (Int64)
-import           Control.Monad.ST (ST)
-import           Data.Foldable (forM_)
-import           Data.Word                        (Word8, Word64)
-import qualified Data.Vector.Storable      as Vec
-import qualified Data.Vector.Storable.Mutable      as Vec
+import qualified Data.ByteString                    as B
+import qualified Data.ByteString.Unsafe             as B
+import           Data.Functor.Identity              (Identity (..))
+import           Data.Functor.Sum                   (Sum (..))
+import           Data.Int                           (Int64)
+import qualified Data.Vector.Storable               as Vec
+import qualified Data.Vector.Storable.Mutable       as Vec
+import           Data.Word                          (Word64)
 
-import           Data.ByteString.Streaming        (ByteString)
-import qualified Data.ByteString.Streaming        as Q
-import           Streaming                        (Stream, Of (..))
-import qualified Streaming                        as S
+import           Data.ByteString.Streaming          (ByteString)
+import qualified Data.ByteString.Streaming          as Q
+import           Streaming                          (Of (..), Stream)
+import qualified Streaming                          as S
 
 --------------------------------------------------------------------------------
 -- Main function
@@ -135,6 +134,11 @@ with the previous unfiltered scanline (which is 'Nothing' if we're at the first
 scanline), reconstruct the pixel data. Fails at runtime, possible even with a
 segfault, if either input scanline is the wrong size.
 
+This is a giant ugly mess, but it's fast. Can it be refactored into something
+nicer while retaining its speed?
+
+Also, it still takes up roughly 50% of the running time of decoding a PNG. Maybe
+it can be made even faster?
 -}
 reconstructScanline
   :: (MonadThrow m, MonadIO m)
@@ -146,65 +150,78 @@ reconstructScanline prevByteDistance mprev filteredLine
   | Just (filterType, this) <- B.uncons filteredLine =
       let lenThis = B.length this
 
-          -- This is a giant ugly mess, but it's super-fast. Can it be
-          -- refactored into something nicer while retaining its speed?
-          genScanline :: ST s (Vec.MVector s Word8)
-          genScanline
-            | filterType == 0 = Vec.unsafeThaw (bytestringToVector this)
-            | filterType == 1 =
-              do v <- Vec.new lenThis
-                 forM_ [0..lenThis - 1] $ \i ->
-                   do a <- if i >= prevByteDistance
-                           then Vec.read v (i - prevByteDistance)
-                           else return 0
-                      Vec.write v i (B.index this i + a)
-                 return v
-            | filterType == 2 =
-              case mprev of
-                Just prev ->
-                  Vec.unsafeThaw $ Vec.generate lenThis $ \i ->
-                  B.index prev i + B.index this i
-                Nothing -> Vec.unsafeThaw (bytestringToVector this)
-            | filterType == 3 =
-              case mprev of
-                Just prev ->
-                  do v <- Vec.new lenThis
-                     forM_ [0..lenThis - 1] $ \i ->
-                       do a <- if i >= prevByteDistance
-                               then Vec.read v (i - prevByteDistance)
-                               else return 0
-                          Vec.write v i (reconAverage a (B.index prev i) (B.index this i))
-                     return v
-                Nothing ->
-                  do v <- Vec.new lenThis
-                     forM_ [0..lenThis - 1] $ \i ->
-                       do a <- if i >= prevByteDistance
-                               then Vec.read v (i - prevByteDistance)
-                               else return 0
-                          Vec.write v i (reconAverage a 0 (B.index this i))
-                     return v
-            | filterType == 4 =
-              case mprev of
-                Just prev ->
-                  do v <- Vec.new lenThis
-                     forM_ [0..lenThis - 1] $ \i ->
-                       do (a, c) <- if i >= prevByteDistance
-                                    then do a <- Vec.read v (i - prevByteDistance)
-                                            return (a, B.index prev (i - prevByteDistance))
-                                    else return (0, 0)
-                          Vec.write v i (reconPaeth a (B.index prev i) c (B.index this i))
-                     return v
-                Nothing ->
-                  do v <- Vec.new lenThis
-                     forM_ [0..lenThis - 1] $ \i ->
-                       do a <- if i >= prevByteDistance
-                               then Vec.read v (i - prevByteDistance)
-                               else return 0
-                          Vec.write v i (reconPaeth a 0 0 (B.index this i))
-                     return v
-            | otherwise = Vec.new 0
+          -- This function is equivalent to @forM_ [0 .. lenThis - 1]@, but
+          -- slightly faster in my benchmarks
+          loop :: Monad m => (Int -> m ()) -> m ()
+          loop action = go 0
+            where
+              go n | n < lenThis = do action n; go (n + 1)
+                   | otherwise = return ()
+          {-# INLINE loop #-}
 
-          res = vectorToBytestring (Vec.create genScanline)
+          noFilter = this
+
+          subFilter = vectorToBytestring $ Vec.create $
+            do v <- Vec.new lenThis
+               loop $ \i ->
+                 do a <- if i >= prevByteDistance
+                         then Vec.read v (i - prevByteDistance)
+                         else return 0
+                    Vec.write v i (B.unsafeIndex this i + a)
+               return v
+
+          upFilter =
+            case mprev of
+              Just prev ->
+                vectorToBytestring $ Vec.generate lenThis $ \i ->
+                  B.unsafeIndex prev i + B.unsafeIndex this i
+              Nothing -> this
+
+          averageFilter = vectorToBytestring $ Vec.create $
+            case mprev of
+              Just prev ->
+                do v <- Vec.new lenThis
+                   loop $ \i ->
+                     do a <- if i >= prevByteDistance
+                             then Vec.read v (i - prevByteDistance)
+                             else return 0
+                        Vec.write v i (reconAverage a (B.unsafeIndex prev i) (B.unsafeIndex this i))
+                   return v
+              Nothing ->
+                do v <- Vec.new lenThis
+                   loop $ \i ->
+                     do a <- if i >= prevByteDistance
+                             then Vec.read v (i - prevByteDistance)
+                             else return 0
+                        Vec.write v i (reconAverage a 0 (B.unsafeIndex this i))
+                   return v
+
+          paethFilter = vectorToBytestring $ Vec.create $
+            case mprev of
+              Just prev ->
+                do v <- Vec.new lenThis
+                   loop $ \i ->
+                     do (a, c) <- if i >= prevByteDistance
+                                  then do a <- Vec.read v (i - prevByteDistance)
+                                          return (a, B.unsafeIndex prev (i - prevByteDistance))
+                                  else return (0, 0)
+                        Vec.write v i (reconPaeth a (B.unsafeIndex prev i) c (B.unsafeIndex this i))
+                   return v
+              Nothing ->
+                do v <- Vec.new lenThis
+                   loop $ \i ->
+                     do a <- if i >= prevByteDistance
+                             then Vec.read v (i - prevByteDistance)
+                             else return 0
+                        Vec.write v i (reconPaeth a 0 0 (B.unsafeIndex this i))
+                   return v
+
+          res | filterType == 0 = noFilter
+              | filterType == 1 = subFilter
+              | filterType == 2 = upFilter
+              | filterType == 3 = averageFilter
+              | filterType == 4 = paethFilter
+              | otherwise = mempty
 
          in if B.length res == lenThis
             then return res
