@@ -1,6 +1,6 @@
 name:                streaming-png
 version:             0.1.0.0
-synopsis:            Perfectly streaming PNG image decoding.
+synopsis:            Perfectly streaming PNG image decoding
 description:         Please see README.md
 homepage:            http://github.com/bch29/streaming-png#readme
 license:             BSD3

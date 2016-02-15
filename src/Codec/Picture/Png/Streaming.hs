@@ -4,7 +4,7 @@ Copyright : (c) Bradley Hardy 2016
 License: LGPL3
 Maintainer: bradleyhardy@live.com
 Stability: experimental
-Portability: portable
+Portability: non-portable
 
 A perfectly streaming PNG decoding library.
 -}

@@ -4,7 +4,7 @@ Copyright : (c) Bradley Hardy 2016
 License: LGPL3
 Maintainer: bradleyhardy@live.com
 Stability: experimental
-Portability: portable
+Portability: non-portable
 
 -}
 
@@ -96,18 +96,22 @@ paethPredictor a b c =
         | pb <= pc -> b
         | otherwise -> c
 
+-- | Average filter a byte.
 filterAverage :: Word8 -> Word8 -> Word8 -> Word8
 filterAverage a b x = x - fromIntegral ((fromIntegral a + fromIntegral b) `div` (2 :: Word16))
 {-# INLINE filterAverage #-}
 
+-- | Paeth filter a byte.
 filterPaeth :: Word8 -> Word8 -> Word8 -> Word8 -> Word8
 filterPaeth a b c x = x - paethPredictor a b c
 {-# INLINE filterPaeth #-}
 
+-- | Reconstruct an average filtered byte.
 reconAverage :: Word8 -> Word8 -> Word8 -> Word8
 reconAverage a b x = x + fromIntegral ((fromIntegral a + fromIntegral b) `div` (2 :: Word16))
 {-# INLINE reconAverage #-}
 
+-- | Reconstruct a Paeth filtered byte.
 reconPaeth :: Word8 -> Word8 -> Word8 -> Word8 -> Word8
 reconPaeth a b c x = x + paethPredictor a b c
 {-# INLINE reconPaeth #-}
