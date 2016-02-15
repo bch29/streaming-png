@@ -6,6 +6,10 @@ Maintainer: bradleyhardy@live.com
 Stability: experimental
 Portability: non-portable
 
+This is a set of assorted utility functions for @streaming@ and
+@streaming-bytestring@ which are used in various places in this library, but may
+also be of use to others so they are exposed here.
+
 -}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}

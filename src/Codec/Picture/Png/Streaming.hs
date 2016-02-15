@@ -12,16 +12,16 @@ A perfectly streaming PNG decoding library.
 {-# LANGUAGE RecordWildCards #-}
 module Codec.Picture.Png.Streaming
        (
-         -- * Types
-         PNGDecodeError(..)
-       , DecodedPNG
-       , HeaderData(..)
-
          -- * Decoding
-       , decodePNG
+         decodePNG
        , decodePNGComplete
        , decodePNGFile
        , decodeHeader
+
+         -- * Types
+       , PNGDecodeError(..)
+       , DecodedPNG
+       , HeaderData(..)
 
          -- * Misc
        , ChunkType

@@ -6,6 +6,13 @@ Maintainer: bradleyhardy@live.com
 Stability: experimental
 Portability: non-portable
 
+Provides a way to produce @JuicyPixels@ images from PNG data decoded with
+@streaming-png@.
+
+For example, to load a @JuicyPixels@ image from a PNG file:
+
+> decodePNGFile "my-png.png" >>= imageFromStream :: (MonadIO m, MonadThrow m) => m (Of DynamicImage ())
+
 -}
 {-# LANGUAGE MultiWayIf      #-}
 {-# LANGUAGE RecordWildCards #-}

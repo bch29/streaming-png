@@ -16,7 +16,7 @@ module Streaming.Zlib
        , compressStream
        , compressStream'
 
-         -- * Re-exported from 'Codec.Compression.Zlib'
+         -- * Re-exported from 'Data.Streaming.Zlib'
        , CompressionLevel
        , WindowBits
        , defaultWindowBits
